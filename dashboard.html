@@ -1,0 +1,767 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FinSight Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f5fa;
+            padding: 25px;
+            color: #222;
+            margin: 0;
+        }
+
+        h1 {
+            color: #172554;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .top a, .btn {
+            background: #2563eb;
+            color: white;
+            padding: 10px 16px;
+            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .card, .chart, .table-box, .form-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px #ddd;
+        }
+
+        .card h2 {
+            color: #2563eb;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .chart canvas {
+            max-height: 300px;
+        }
+
+        .table-box, .form-box {
+            margin-top: 25px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #172554;
+            color: white;
+        }
+
+        input, select {
+            padding: 10px;
+            margin: 6px 0;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .message {
+            background: #dbeafe;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+        }
+
+        .insight {
+            background: #eff6ff;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+        }
+
+        .delete-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 7px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .export {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .export a {
+            background: #15803d;
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="top">
+    <div>
+        <h1>◈ FinSight Dashboard</h1>
+        <p>Welcome, {{ session.get('name', 'User') }}</p>
+        <p>Financial Management and Analysis System</p>
+    </div>
+
+    <a href="{{ url_for('logout') }}">Logout</a>
+</div>
+
+
+<!-- FLASH MESSAGES -->
+
+{% with messages = get_flashed_messages() %}
+    {% for message in messages %}
+        <div class="message">{{ message }}</div>
+    {% endfor %}
+{% endwith %}
+
+
+<!-- SUMMARY CARDS -->
+
+<div class="cards">
+
+    <div class="card">
+        <h3>Total Income</h3>
+        <h2>₹{{ "{:,.2f}".format(income|default(0)) }}</h2>
+    </div>
+
+    <div class="card">
+        <h3>Total Expenses</h3>
+        <h2>₹{{ "{:,.2f}".format(expenses|default(0)) }}</h2>
+    </div>
+
+    <div class="card">
+        <h3>Available Balance</h3>
+        <h2>₹{{ "{:,.2f}".format(balance|default(0)) }}</h2>
+    </div>
+
+    <div class="card">
+        <h3>Total Transactions</h3>
+        <h2>{{ transactions|length }}</h2>
+    </div>
+
+    <div class="card">
+        <h3>Total Invested</h3>
+        <h2>₹{{ "{:,.2f}".format(invested|default(0)) }}</h2>
+    </div>
+
+    <div class="card">
+        <h3>Current Investment Value</h3>
+        <h2>₹{{ "{:,.2f}".format(current|default(0)) }}</h2>
+    </div>
+
+    <div class="card">
+        <h3>Financial Score</h3>
+        <h2>{{ score|default(0) }} / 100</h2>
+    </div>
+
+</div>
+
+
+<!-- CHARTS -->
+
+<div class="charts">
+
+    <div class="chart">
+        <h3>Category-wise Spending</h3>
+        <canvas id="categoryChart"></canvas>
+    </div>
+
+    <div class="chart">
+        <h3>Income vs Expenses</h3>
+        <canvas id="incomeChart"></canvas>
+    </div>
+
+    <div class="chart">
+        <h3>Investment Analysis</h3>
+        <canvas id="investmentChart"></canvas>
+    </div>
+
+    <div class="chart">
+        <h3>Budget Analysis</h3>
+        <canvas id="budgetChart"></canvas>
+    </div>
+
+</div>
+
+
+<!-- FINANCIAL INSIGHTS -->
+
+<div class="table-box">
+
+    <h2>Financial Insights</h2>
+
+    {% for insight in insights %}
+        <div class="insight">
+            {{ insight }}
+        </div>
+    {% endfor %}
+
+</div>
+
+
+<!-- ADD TRANSACTION -->
+
+<div class="form-box">
+
+    <h2>Add Income / Expense</h2>
+
+    <form action="{{ url_for('transaction_add') }}" method="POST">
+
+        <div class="form-grid">
+
+            <div>
+                <label>Date</label>
+                <input type="date" name="entry_date" required>
+            </div>
+
+            <div>
+                <label>Transaction Type</label>
+                <select name="kind" required>
+                    <option value="Income">Income</option>
+                    <option value="Expense">Expense</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Category</label>
+                <input type="text" name="category" placeholder="Food, Salary, Travel" required>
+            </div>
+
+            <div>
+                <label>Amount</label>
+                <input type="number" name="amount" min="0.01" step="0.01" required>
+            </div>
+
+            <div>
+                <label>Description</label>
+                <input type="text" name="description" placeholder="Enter description">
+            </div>
+
+        </div>
+
+        <button class="btn" type="submit">Add Transaction</button>
+
+    </form>
+
+</div>
+
+
+<!-- CSV IMPORT -->
+
+<div class="form-box">
+
+    <h2>Import Financial CSV Dataset</h2>
+
+    <p>Upload your downloaded CSV file to import financial transactions.</p>
+
+    <form action="{{ url_for('csv_import') }}"
+          method="POST"
+          enctype="multipart/form-data">
+
+        <input type="file" name="dataset" accept=".csv" required>
+
+        <button class="btn" type="submit">Import CSV Data</button>
+
+    </form>
+
+    <p>
+        Required CSV columns:
+        date, kind, category, description, amount
+    </p>
+
+</div>
+
+
+<!-- ADD BUDGET -->
+
+<div class="form-box">
+
+    <h2>Add Monthly Budget</h2>
+
+    <form action="{{ url_for('budget_add') }}" method="POST">
+
+        <div class="form-grid">
+
+            <div>
+                <label>Month</label>
+                <input type="month" name="month" id="budgetMonth" required>
+            </div>
+
+            <div>
+                <label>Category</label>
+                <input type="text" name="category" placeholder="Food" required>
+            </div>
+
+            <div>
+                <label>Budget Amount</label>
+                <input type="number" name="amount" min="0.01" step="0.01" required>
+            </div>
+
+        </div>
+
+        <button class="btn" type="submit">Save Budget</button>
+
+    </form>
+
+</div>
+
+
+<!-- ADD INVESTMENT -->
+
+<div class="form-box">
+
+    <h2>Add Investment</h2>
+
+    <form action="{{ url_for('investment_add') }}" method="POST">
+
+        <div class="form-grid">
+
+            <div>
+                <label>Investment Name</label>
+                <input type="text" name="name" required>
+            </div>
+
+            <div>
+                <label>Asset Type</label>
+                <input type="text" name="asset_type" placeholder="Mutual Fund, Stock" required>
+            </div>
+
+            <div>
+                <label>Invested Amount</label>
+                <input type="number" name="invested" min="0" step="0.01" required>
+            </div>
+
+            <div>
+                <label>Current Value</label>
+                <input type="number" name="current_value" min="0" step="0.01" required>
+            </div>
+
+        </div>
+
+        <button class="btn" type="submit">Save Investment</button>
+
+    </form>
+
+</div>
+
+
+<!-- ADD SAVINGS GOAL -->
+
+<div class="form-box">
+
+    <h2>Add Savings Goal</h2>
+
+    <form action="{{ url_for('goal_add') }}" method="POST">
+
+        <div class="form-grid">
+
+            <div>
+                <label>Goal Name</label>
+                <input type="text" name="name" required>
+            </div>
+
+            <div>
+                <label>Target Amount</label>
+                <input type="number" name="target" min="0.01" step="0.01" required>
+            </div>
+
+            <div>
+                <label>Saved Amount</label>
+                <input type="number" name="saved" min="0" step="0.01" required>
+            </div>
+
+            <div>
+                <label>Due Date</label>
+                <input type="date" name="due_date">
+            </div>
+
+        </div>
+
+        <button class="btn" type="submit">Save Goal</button>
+
+    </form>
+
+</div>
+
+
+<!-- BUDGET DETAILS -->
+
+<div class="table-box">
+
+    <h2>Budget Details</h2>
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Budget</th>
+                <th>Spent</th>
+                <th>Usage</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for b in budget_view %}
+
+            <tr>
+                <td>{{ b.category }}</td>
+                <td>₹{{ "{:,.2f}".format(b.amount) }}</td>
+                <td>₹{{ "{:,.2f}".format(b.spent) }}</td>
+                <td>{{ b.pct }}%</td>
+                <td>
+                    {% if b.over %}
+                        Exceeded
+                    {% else %}
+                        Within Budget
+                    {% endif %}
+                </td>
+            </tr>
+
+            {% else %}
+
+            <tr>
+                <td colspan="5">No budgets added for this month.</td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+
+<!-- SAVINGS GOALS -->
+
+<div class="table-box">
+
+    <h2>Savings Goals</h2>
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Goal</th>
+                <th>Target</th>
+                <th>Saved</th>
+                <th>Remaining</th>
+                <th>Due Date</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for g in goals %}
+
+            <tr>
+                <td>{{ g.name }}</td>
+                <td>₹{{ "{:,.2f}".format(g.target) }}</td>
+                <td>₹{{ "{:,.2f}".format(g.saved) }}</td>
+                <td>₹{{ "{:,.2f}".format(g.target - g.saved) }}</td>
+                <td>{{ g.due_date or 'Not specified' }}</td>
+            </tr>
+
+            {% else %}
+
+            <tr>
+                <td colspan="5">No savings goals added.</td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+
+<!-- ALL TRANSACTIONS -->
+
+<div class="table-box">
+
+    <h2>Recent Transactions</h2>
+
+    <p>Showing the latest 12 transactions.</p>
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for row in transactions %}
+
+            <tr>
+
+                <td>{{ row["entry_date"] }}</td>
+
+                <td>{{ row["kind"] }}</td>
+
+                <td>{{ row["category"] }}</td>
+
+                <td>{{ row["description"] or '' }}</td>
+
+                <td>₹{{ "{:,.2f}".format(row["amount"]) }}</td>
+
+                <td>
+
+                    <form action="{{ url_for('transaction_delete', tid=row['id']) }}"
+                          method="POST">
+
+                        <button class="delete-btn" type="submit">
+                            Delete
+                        </button>
+
+                    </form>
+
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+                <td colspan="6">No transactions available.</td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+
+<!-- EXPORT REPORTS -->
+
+<div class="table-box">
+
+    <h2>Download Financial Reports</h2>
+
+    <div class="export">
+
+        <a href="{{ url_for('export_excel') }}">
+            Download Excel Report
+        </a>
+
+        <a href="{{ url_for('export_pdf') }}">
+            Download PDF Report
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- CHART JAVASCRIPT -->
+
+<script>
+
+const categoryLabels = {{ labels | tojson }};
+const categoryValues = {{ values | tojson }};
+
+const incomeValue = {{ income | tojson }};
+const expenseValue = {{ expenses | tojson }};
+
+const investedValue = {{ invested | tojson }};
+const currentValue = {{ current | tojson }};
+
+const budgetLabels = {{ budget_view | map(attribute='category') | list | tojson }};
+const budgetAmounts = {{ budget_view | map(attribute='amount') | list | tojson }};
+const budgetSpent = {{ budget_view | map(attribute='spent') | list | tojson }};
+
+
+// CATEGORY-WISE SPENDING
+
+new Chart(document.getElementById("categoryChart"), {
+
+    type: "bar",
+
+    data: {
+        labels: categoryLabels,
+
+        datasets: [{
+            label: "Spending Amount",
+            data: categoryValues,
+            backgroundColor: "#3b82f6",
+            borderWidth: 1
+        }]
+    },
+
+    options: {
+        responsive: true,
+        maintainAspectRatio: true
+    }
+
+});
+
+
+// INCOME VS EXPENSES
+
+new Chart(document.getElementById("incomeChart"), {
+
+    type: "doughnut",
+
+    data: {
+
+        labels: ["Income", "Expenses"],
+
+        datasets: [{
+            data: [incomeValue, expenseValue],
+            backgroundColor: ["#16a34a", "#ef4444"]
+        }]
+
+    },
+
+    options: {
+        responsive: true
+    }
+
+});
+
+
+// INVESTMENT ANALYSIS
+
+new Chart(document.getElementById("investmentChart"), {
+
+    type: "bar",
+
+    data: {
+
+        labels: ["Invested Amount", "Current Value"],
+
+        datasets: [{
+            label: "Investment Value",
+            data: [investedValue, currentValue],
+            backgroundColor: ["#8b5cf6", "#06b6d4"]
+        }]
+
+    },
+
+    options: {
+        responsive: true
+    }
+
+});
+
+
+// BUDGET ANALYSIS
+
+new Chart(document.getElementById("budgetChart"), {
+
+    type: "bar",
+
+    data: {
+
+        labels: budgetLabels,
+
+        datasets: [
+            {
+                label: "Budget Amount",
+                data: budgetAmounts,
+                backgroundColor: "#93c5fd"
+            },
+            {
+                label: "Actual Spending",
+                data: budgetSpent,
+                backgroundColor: "#f97316"
+            }
+        ]
+
+    },
+
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+
+});
+
+
+// DEFAULT MONTH
+
+const monthInput = document.getElementById("budgetMonth");
+
+if (monthInput) {
+    monthInput.value = new Date().toISOString().slice(0, 7);
+}
+
+</script>
+
+</body>
+</html>
